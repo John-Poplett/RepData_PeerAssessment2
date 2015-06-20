@@ -1,0 +1,109 @@
+---
+title: "Economic and Human Loss by Storms in the U.S."
+author: "[John H. Poplett](mailto:john.poplett@acm.org)"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Synopsis
+This study shows some of the more dire consequences of storms in the US, including economic loss and loss of life. It further illustrates the kinds of storms that have the greatest impact on human lives, economically and health wise. The data is drawn from the [storm events database](http://www.ncdc.noaa.gov/stormevents/) available through [Climate Data Online](http://www.ncdc.noaa.gov/cdo-web/), a national resource from the [National Centers for Environmental Information](http://www.ncdc.noaa.gov) (NCEI).
+
+# Data Processing
+To make the data pristine and produce meaningful results, steps were taken to "clean" the raw data, especially to eliminate data that has been mislabeled. The code sections below show how the data is loaded. The code converts the event type column, "EVTYPE", to upper-case, corrects the event type column, "EVTYPE", for whitespace errors and then weeds out the proportionally small amount of EVTYPE values that don't conform to the canonical naming conventions described by the NCEI for event types.
+
+## Define Constants
+Define constants to get the ball rolling.
+
+```{r constants, echo = TRUE, cache = TRUE, message = FALSE}
+storm.event.data.URL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+storm.event.data.file.name <- "repdata-data-StormData.csv"
+```
+
+## Data Loading and EVTYPE Value Clean-up
+The code performs the following steps to process the data; it:
+
+* downloads compressed Compressed data from this Internet [location](`r storm.event.data.URL`).
+* converts EVTYPE values to upper-case
+* reduces multiple consecutive whitespaces in EVTYPE values to a single space
+* trims EVTYPE values of Leading and trailing whitespace
+
+```{r load, echo = TRUE, cache = TRUE}
+storm.data <- read.csv(storm.event.data.file.name)
+storm.data$EVTYPE <- as.character(storm.data$EVTYPE)
+storm.data$EVTYPE <- toupper(storm.data$EVTYPE)
+storm.data$EVTYPE <- gsub("\\s+", " ", storm.data$EVTYPE, perl = TRUE)
+storm.data$EVTYPE <- sub("^\\s+", "", storm.data$EVTYPE, perl = TRUE)
+storm.data$EVTYPE <- sub("\\s+$", "", storm.data$EVTYPE, perl = TRUE)
+```
+
+## Event Type Filtering
+
+```{r evtype-filtering}
+library(dplyr)
+evtypes <- data.frame(evtype = c("ASTRONOMICAL LOW TIDE", "AVALANCHE",
+  "BLIZZARD", "COASTAL FLOOD", "COLD/WIND CHILL", "DEBRIS FLOW",
+  "DENSE FOG", "DENSE SMOKE", "DROUGHT", "DUST DEVIL", "DUST STORM",
+  "EXCESSIVE HEAT", "EXTREME COLD/WIND CHILL", "FLASH FLOOD", "FLOOD",
+  "FROST/FREEZE", "FUNNEL CLOUD", "FREEZING FOG", "HAIL", "HEAT",
+  "HEAVY RAIN", "HEAVY SNOW", "HIGH SURF", "HIGH WIND", "HURRICANE (TYPHOON)",
+  "ICE STORM", "LAKE-EFFECT SNOW", "LAKESHORE FLOOD", "LIGHTNING",
+  "MARINE HAIL", "MARINE HIGH WIND", "MARINE STRONG WIND", "MARINE THUNDERSTORM WIND",
+  "RIP CURRENT", "SEICHE", "SLEET", "STORM SURGE/TIDE", "STRONG WIND",
+  "THUNDERSTORM WIND", "TORNADO", "TROPICAL DEPRESSION", "TROPICAL STORM",
+  "TSUNAMI", "VOLCANIC ASH", "WATERSPOUT", "WILDFIRE", "WINTER STORM",
+  "WINTER WEATHER"))
+
+evtype.values.before <- length(unique(storm.data$EVTYPE))
+storm.data.rows.before <- nrow(storm.data)
+
+storm.data <- storm.data %>% filter(storm.data$EVTYPE %in% evtypes$evtype)
+
+evtype.values.after <- length(unique(storm.data$EVTYPE))
+storm.data.rows.after <- nrow(storm.data)
+```
+
+Before filtering, there were `r evtype.values.before` evtype values distributed over `r prettyNum(storm.data.rows.before, big.mark = ",")` rows. After filtering, there are `r evtype.values.after` evtype values distributed over `r prettyNum(storm.data.rows.after, big.mark = ",")` rows.
+
+# Results
+
+## Events Most Harmful to Population Health
+
+```{r most-harmful}
+library(dplyr)
+storm.data.summary <- storm.data %>%
+  group_by(EVTYPE) %>%
+  summarise_each(funs(sum), FATALITIES, INJURIES) %>%
+  arrange(desc(FATALITIES))
+
+storm.data.summary$INCIDENTS <- storm.data.summary$FATALITIES + storm.data.summary$INJURIES
+
+head(storm.data.summary, n = 10)
+head(storm.data.summary %>% arrange(desc(INCIDENTS)), n = 10)
+```
+
+# Notes for Data Scientists
+
+## Data Cleaning
+Other approaches to data cleaning were considered including efforts to correct various kinds of mislabeling errors, e.g.:
+
+* typos (e.g. "THUNERSTORMS")
+* word swaps (e.g. "high" for "heavy")
+* synonyms (e.g. "precipitation" for "rain" or "driest month" for "drought")
+
+## Adjusting for Inflation
+
+# Flotsam & Jetsam
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

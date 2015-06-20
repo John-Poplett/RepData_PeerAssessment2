@@ -3,3 +3,8 @@ NCDC Storm Events-FAQ Page.pdf
 pd01016005curr.pdf
 .RData
 .Rhistory
+*.RData
+storms.pdf
+LossByStorms.html
+LossByStorms_cache/
+LossByStorms_files/

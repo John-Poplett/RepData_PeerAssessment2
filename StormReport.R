@@ -1,8 +1,19 @@
 library(dplyr)
 
 storm.data <- read.csv("repdata-data-StormData.csv")
-evtypes <- read.csv("evtypes.csv")
-evtypes$evtype <- toupper(evtypes$evtype)
+
+evtypes <- data.frame(evtype = c("ASTRONOMICAL LOW TIDE", "AVALANCHE",
+  "BLIZZARD", "COASTAL FLOOD", "COLD/WIND CHILL", "DEBRIS FLOW",
+  "DENSE FOG", "DENSE SMOKE", "DROUGHT", "DUST DEVIL", "DUST STORM",
+  "EXCESSIVE HEAT", "EXTREME COLD/WIND CHILL", "FLASH FLOOD", "FLOOD",
+  "FROST/FREEZE", "FUNNEL CLOUD", "FREEZING FOG", "HAIL", "HEAT",
+  "HEAVY RAIN", "HEAVY SNOW", "HIGH SURF", "HIGH WIND", "HURRICANE (TYPHOON)",
+  "ICE STORM", "LAKE-EFFECT SNOW", "LAKESHORE FLOOD", "LIGHTNING",
+  "MARINE HAIL", "MARINE HIGH WIND", "MARINE STRONG WIND", "MARINE THUNDERSTORM WIND",
+  "RIP CURRENT", "SEICHE", "SLEET", "STORM SURGE/TIDE", "STRONG WIND",
+  "THUNDERSTORM WIND", "TORNADO", "TROPICAL DEPRESSION", "TROPICAL STORM",
+  "TSUNAMI", "VOLCANIC ASH", "WATERSPOUT", "WILDFIRE", "WINTER STORM",
+  "WINTER WEATHER"))
 
 storm.data$EVTYPE <- as.character(storm.data$EVTYPE)
 storm.data$EVTYPE <- toupper(storm.data$EVTYPE)
@@ -55,9 +66,9 @@ storm.data <- storm.data %>% filter(storm.data$EVTYPE %in% evtypes$evtype)
 
 unique(storm.data$EVTYPE)
 
-storm.data.summary <- storm.data %>% 
-  group_by(EVTYPE) %>% 
-  summarise_each(funs(sum), FATALITIES, INJURIES) %>% 
+storm.data.summary <- storm.data %>%
+  group_by(EVTYPE) %>%
+  summarise_each(funs(sum), FATALITIES, INJURIES) %>%
   arrange(desc(FATALITIES))
 
 storm.data.summary$INCIDENTS <- storm.data.summary$FATALITIES + storm.data.summary$INJURIES
