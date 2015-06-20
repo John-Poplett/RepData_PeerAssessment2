@@ -64,11 +64,19 @@ storm.data.rows.after <- nrow(storm.data)
 Before filtering, there were `r evtype.values.before` evtype values distributed over `r prettyNum(storm.data.rows.before, big.mark = ",")` rows. After filtering, there are `r evtype.values.after` evtype values distributed over `r prettyNum(storm.data.rows.after, big.mark = ",")` rows.
 
 # Results
+Results are divided into two parts, concerning respectively:
+
+* human harm
+* economic harm
 
 ## Events Most Harmful to Population Health
+The following code identifies and displays the events that are most harmful to humans in terms of the total count of fatalities, injuries and incidents (the sum of fatalities and injuries) that are attributed to individual storm events.
 
-```{r most-harmful}
+```{r most-harmful, fig.height = 8, fig.width = 16}
 library(dplyr)
+library(reshape2)
+library(ggplot2)
+
 storm.data.summary <- storm.data %>%
   group_by(EVTYPE) %>%
   summarise_each(funs(sum), FATALITIES, INJURIES) %>%
@@ -76,8 +84,25 @@ storm.data.summary <- storm.data %>%
 
 storm.data.summary$INCIDENTS <- storm.data.summary$FATALITIES + storm.data.summary$INJURIES
 
-head(storm.data.summary, n = 10)
-head(storm.data.summary %>% arrange(desc(INCIDENTS)), n = 10)
+fatalities <- head(storm.data.summary, n = 5)
+injuries <- head(storm.data.summary %>% arrange(desc(INJURIES)), n = 5)
+incidents <- head(storm.data.summary %>% arrange(desc(INCIDENTS)), n = 5)
+
+fatalities <- fatalities %>% melt(id.vars = "EVTYPE", measure.vars = "FATALITIES")
+injuries <- injuries %>% melt(id.vars = "EVTYPE", measure.vars = "INJURIES")
+incidents <- incidents %>% melt(id.vars = "EVTYPE", measure.vars = "INCIDENTS")
+
+most.harmful <- rbind(fatalities, injuries, incidents)
+
+ggplot(data=most.harmful, aes(x=EVTYPE, y=value, fill=variable)) + 
+  geom_bar(colour="black", stat="identity",
+           position=position_dodge(),
+           size=.3) +                        # Thinner lines
+  scale_fill_hue(name="Metric") +      # Set legend title
+  xlab("Storm Event") + ylab("Count") + # Set axis labels
+  ggtitle("Human Harm") +     # Set title
+  theme_bw()
+
 ```
 
 # Notes for Data Scientists
@@ -90,20 +115,4 @@ Other approaches to data cleaning were considered including efforts to correct v
 * synonyms (e.g. "precipitation" for "rain" or "driest month" for "drought")
 
 ## Adjusting for Inflation
-
-# Flotsam & Jetsam
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r}
-summary(cars)
-```
-
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-plot(cars)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+It is possible to consider adjusting historic damage amounts for inflation to normalize them. This approach was considered but not taken since, for the most part, the relative value of currency in a given year will be the same for all storm event types. So despite inflation, the proportions should remain roughly on par.
